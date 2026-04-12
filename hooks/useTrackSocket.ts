@@ -111,8 +111,8 @@ export function useTrackSocket(token: string) {
 
     const fetchTripDetails = async (tripId: string) => {
       try {
-        console.log("� Fetching trip details for:", tripId);
-        const response = await fetch(`${API_URL}/trips/${tripId}`);
+        console.log("📡 Fetching trip details for:", tripId);
+        const response = await fetch(`/api/trips/${tripId}`);
         const result = await response.json();
         console.log("📋 Trip API response:", result);
 
