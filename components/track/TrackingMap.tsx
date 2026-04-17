@@ -9,6 +9,12 @@ import {
 } from "@vis.gl/react-google-maps";
 import { VehicleLocation, PassengerLocation } from "@/types/track";
 
+declare global {
+  interface Window {
+    google: any;
+  }
+}
+
 interface TrackingMapProps {
   vehicleLocation: VehicleLocation | null;
   passengerLocation: PassengerLocation | null;
@@ -117,7 +123,7 @@ function MapContent({ vehicleLocation, passengerLocation }: TrackingMapProps) {
   useEffect(() => {
     if (!map) return;
 
-    const bounds = new google.maps.LatLngBounds();
+    const bounds = new window.google.maps.LatLngBounds();
     let hasPoints = false;
 
     if (primaryVehicleLocation) {
@@ -139,13 +145,13 @@ function MapContent({ vehicleLocation, passengerLocation }: TrackingMapProps) {
     if (hasPoints) {
       map.fitBounds(bounds, { top: 80, right: 60, bottom: 260, left: 60 });
 
-      const listener = google.maps.event.addListenerOnce(map, "idle", () => {
+      const listener = window.google.maps.event.addListenerOnce(map, "idle", () => {
         const zoom = map.getZoom();
         if (zoom && zoom > 16) map.setZoom(16);
       });
 
       return () => {
-        google.maps.event.removeListener(listener);
+        window.google.maps.event.removeListener(listener);
       };
     }
   }, [map, primaryVehicleLocation, passengerLocation, vehicleLocation]);
