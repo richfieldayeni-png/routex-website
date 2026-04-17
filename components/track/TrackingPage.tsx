@@ -21,11 +21,23 @@ export default function TrackingPage({ token }: TrackingPageProps) {
 
   const [sheetExpanded, setSheetExpanded] = useState(true);
 
-  const speed = vehicleLocation?.speed;
-  const heading = vehicleLocation?.heading;
+  const speed = vehicleLocation?.speed ?? passengerLocation?.speed;
+  const heading = vehicleLocation?.heading ?? passengerLocation?.heading;
   const passengerName = tripInfo?.passenger
     ? `${tripInfo.passenger.firstName} ${tripInfo.passenger.lastName}`
     : null;
+
+  // Trip details
+  const vehicleName = tripInfo?.vehicle?.name;
+  const vehicleType = tripInfo?.vehicle?.type;
+  const startLocationName =
+    tripInfo?.startLocation?.name || tripInfo?.route?.startLocation?.name;
+  const endLocationName =
+    tripInfo?.endLocation?.name || tripInfo?.route?.endLocation?.name;
+  const tripCode = tripInfo?.code;
+  const distanceKm = tripInfo?.route?.distanceKm;
+  const estimatedDurationMin = tripInfo?.route?.estimatedDurationMin;
+  const stops = tripInfo?.tripStopStatuses || [];
 
   return (
     <div
@@ -360,6 +372,173 @@ export default function TrackingPage({ token }: TrackingPageProps) {
               </div>
             </div>
 
+            {/* Route Info */}
+            {(startLocationName || endLocationName) && (
+              <div
+                style={{
+                  background: "#F8FAFC",
+                  borderRadius: 14,
+                  padding: "14px 16px",
+                  marginBottom: 12,
+                }}
+              >
+                <div
+                  style={{ display: "flex", alignItems: "flex-start", gap: 12 }}
+                >
+                  {/* Route line indicator */}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      paddingTop: 2,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: "50%",
+                        background: "#1A5632",
+                        border: "2px solid #1A5632",
+                      }}
+                    />
+                    <div
+                      style={{
+                        width: 2,
+                        height: stops.length > 0 ? 50 : 24,
+                        background:
+                          "linear-gradient(to bottom, #1A5632, #6A737D)",
+                        margin: "4px 0",
+                      }}
+                    />
+                    <div
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: "50%",
+                        background: "#fff",
+                        border: "2px solid #6A737D",
+                      }}
+                    />
+                  </div>
+                  {/* Locations */}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ marginBottom: stops.length > 0 ? 8 : 16 }}>
+                      <div
+                        style={{
+                          fontSize: 10,
+                          color: "#6A737D",
+                          textTransform: "uppercase",
+                          letterSpacing: 0.5,
+                          marginBottom: 2,
+                        }}
+                      >
+                        From
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 14,
+                          color: "#0D1117",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {startLocationName || "—"}
+                      </div>
+                    </div>
+                    {/* Stops */}
+                    {stops.length > 0 && (
+                      <div
+                        style={{
+                          marginBottom: 8,
+                          paddingLeft: 8,
+                          borderLeft: "1px dashed #D1D5DB",
+                        }}
+                      >
+                        {stops.map((stop, idx) => (
+                          <div
+                            key={stop.id}
+                            style={{
+                              fontSize: 12,
+                              color: "#6A737D",
+                              marginBottom: 4,
+                            }}
+                          >
+                            <span style={{ color: "#1A5632", fontWeight: 500 }}>
+                              •
+                            </span>{" "}
+                            {stop.stop.name}
+                            <span
+                              style={{
+                                fontSize: 10,
+                                marginLeft: 6,
+                                color: "#9CA3AF",
+                              }}
+                            >
+                              ({stop.role.replace("_", " ").toLowerCase()})
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div>
+                      <div
+                        style={{
+                          fontSize: 10,
+                          color: "#6A737D",
+                          textTransform: "uppercase",
+                          letterSpacing: 0.5,
+                          marginBottom: 2,
+                        }}
+                      >
+                        To
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 14,
+                          color: "#0D1117",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {endLocationName || "—"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {/* Trip meta */}
+                {(distanceKm || estimatedDurationMin || tripCode) && (
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 12,
+                      marginTop: 12,
+                      paddingTop: 12,
+                      borderTop: "1px solid #E8EEF2",
+                    }}
+                  >
+                    {tripCode && (
+                      <div style={{ fontSize: 11, color: "#6A737D" }}>
+                        <span style={{ fontWeight: 600, color: "#0D1117" }}>
+                          {tripCode}
+                        </span>
+                      </div>
+                    )}
+                    {distanceKm && (
+                      <div style={{ fontSize: 11, color: "#6A737D" }}>
+                        {distanceKm} km
+                      </div>
+                    )}
+                    {estimatedDurationMin && (
+                      <div style={{ fontSize: 11, color: "#6A737D" }}>
+                        ~{Math.round(estimatedDurationMin / 60)}h{" "}
+                        {estimatedDurationMin % 60}m
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Info Cards */}
             <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
               {/* Vehicle Card */}
@@ -415,10 +594,45 @@ export default function TrackingPage({ token }: TrackingPageProps) {
                       letterSpacing: 0.5,
                     }}
                   >
-                    Vehicle
+                    {vehicleType || "Vehicle"}
                   </span>
                 </div>
-                {vehicleLocation ? (
+                {vehicleName ? (
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        lineHeight: 1.3,
+                        marginBottom: 4,
+                      }}
+                    >
+                      {vehicleName}
+                    </div>
+                    {speed !== undefined && speed !== null && (
+                      <div
+                        style={{
+                          fontFamily: "var(--display)",
+                          fontSize: 18,
+                          fontWeight: 800,
+                          lineHeight: 1,
+                          marginTop: 6,
+                        }}
+                      >
+                        {Math.round(speed)}{" "}
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 500,
+                            opacity: 0.7,
+                          }}
+                        >
+                          km/h
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : vehicleLocation ? (
                   <div>
                     {speed !== undefined && speed !== null && (
                       <div

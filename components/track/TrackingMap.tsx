@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   APIProvider,
   Map,
@@ -15,13 +15,102 @@ interface TrackingMapProps {
 }
 
 const defaultCenter = { lat: 9.0579, lng: 7.4951 };
+const ANIMATION_DURATION = 1000; // ms
+
+// Easing function for smooth animation
+function easeOutCubic(t: number): number {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+// Hook for smooth position interpolation
+function useSmoothPosition(
+  targetLocation: { latitude: number; longitude: number } | null,
+): { lat: number; lng: number } | null {
+  const [displayPos, setDisplayPos] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const animationRef = useRef<number | null>(null);
+  const startPosRef = useRef<{ lat: number; lng: number } | null>(null);
+  const startTimeRef = useRef<number>(0);
+  const isFirstPosition = useRef(true);
+
+  useEffect(() => {
+    if (!targetLocation) {
+      setDisplayPos(null);
+      return;
+    }
+
+    const target = {
+      lat: targetLocation.latitude,
+      lng: targetLocation.longitude,
+    };
+
+    // First position - set immediately without animation
+    if (isFirstPosition.current || !displayPos) {
+      isFirstPosition.current = false;
+      setDisplayPos(target);
+      startPosRef.current = target;
+      return;
+    }
+
+    // Cancel any existing animation
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+
+    // Start new animation
+    startPosRef.current = displayPos;
+    startTimeRef.current = performance.now();
+
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTimeRef.current;
+      const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
+      const easedProgress = easeOutCubic(progress);
+
+      if (startPosRef.current) {
+        const newLat =
+          startPosRef.current.lat +
+          (target.lat - startPosRef.current.lat) * easedProgress;
+        const newLng =
+          startPosRef.current.lng +
+          (target.lng - startPosRef.current.lng) * easedProgress;
+        setDisplayPos({ lat: newLat, lng: newLng });
+      }
+
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      } else {
+        startPosRef.current = target;
+      }
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [targetLocation?.latitude, targetLocation?.longitude]);
+
+  return displayPos;
+}
 
 function MapContent({ vehicleLocation, passengerLocation }: TrackingMapProps) {
   const map = useMap();
+  const primaryVehicleLocation = passengerLocation ?? vehicleLocation;
+
+  // Use smooth positions for markers
+  const smoothPrimaryPos = useSmoothPosition(primaryVehicleLocation);
+  const smoothPassengerPos = useSmoothPosition(
+    passengerLocation && vehicleLocation ? passengerLocation : null,
+  );
 
   console.log("🗺️ MapContent render:", {
     vehicleLocation,
     passengerLocation,
+    smoothPrimaryPos,
     mapReady: !!map,
   });
 
@@ -31,15 +120,15 @@ function MapContent({ vehicleLocation, passengerLocation }: TrackingMapProps) {
     const bounds = new google.maps.LatLngBounds();
     let hasPoints = false;
 
-    if (vehicleLocation) {
+    if (primaryVehicleLocation) {
       bounds.extend({
-        lat: vehicleLocation.latitude,
-        lng: vehicleLocation.longitude,
+        lat: primaryVehicleLocation.latitude,
+        lng: primaryVehicleLocation.longitude,
       });
       hasPoints = true;
     }
 
-    if (passengerLocation) {
+    if (passengerLocation && vehicleLocation) {
       bounds.extend({
         lat: passengerLocation.latitude,
         lng: passengerLocation.longitude,
@@ -59,13 +148,16 @@ function MapContent({ vehicleLocation, passengerLocation }: TrackingMapProps) {
         google.maps.event.removeListener(listener);
       };
     }
-  }, [map, vehicleLocation, passengerLocation]);
+  }, [map, primaryVehicleLocation, passengerLocation, vehicleLocation]);
 
   return (
     <Map
       defaultCenter={
-        vehicleLocation
-          ? { lat: vehicleLocation.latitude, lng: vehicleLocation.longitude }
+        primaryVehicleLocation
+          ? {
+              lat: primaryVehicleLocation.latitude,
+              lng: primaryVehicleLocation.longitude,
+            }
           : passengerLocation
             ? {
                 lat: passengerLocation.latitude,
@@ -84,15 +176,10 @@ function MapContent({ vehicleLocation, passengerLocation }: TrackingMapProps) {
       gestureHandling="greedy"
       clickableIcons={false}
     >
-      {vehicleLocation && (
-        <AdvancedMarker
-          position={{
-            lat: vehicleLocation.latitude,
-            lng: vehicleLocation.longitude,
-          }}
-          zIndex={10}
-        >
+      {smoothPrimaryPos && (
+        <AdvancedMarker position={smoothPrimaryPos} zIndex={10}>
           <div
+            className="tracking-marker"
             style={{
               width: 56,
               height: 56,
@@ -152,15 +239,10 @@ function MapContent({ vehicleLocation, passengerLocation }: TrackingMapProps) {
         </AdvancedMarker>
       )}
 
-      {passengerLocation && (
-        <AdvancedMarker
-          position={{
-            lat: passengerLocation.latitude,
-            lng: passengerLocation.longitude,
-          }}
-          zIndex={5}
-        >
+      {smoothPassengerPos && (
+        <AdvancedMarker position={smoothPassengerPos} zIndex={5}>
           <div
+            className="tracking-marker"
             style={{
               width: 44,
               height: 44,

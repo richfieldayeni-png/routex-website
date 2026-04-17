@@ -72,16 +72,23 @@ export function useTrackSocket(token: string) {
       setState((prev) => ({
         ...prev,
         vehicleLocation: data,
+        isConnecting: false,
+        error: null,
       }));
     });
 
-    socketInstance.on("passenger-location", (data: PassengerLocation) => {
+    const handlePassengerLocation = (data: PassengerLocation) => {
       console.log("👤 Passenger location received:", data);
       setState((prev) => ({
         ...prev,
         passengerLocation: data,
+        isConnecting: false,
+        error: null,
       }));
-    });
+    };
+
+    socketInstance.on("passenger-location", handlePassengerLocation);
+    socketInstance.on("passenger-location-update", handlePassengerLocation);
 
     socketInstance.on("exception", (data: SocketException) => {
       console.error("⚠️ Socket exception:", data);
@@ -106,7 +113,7 @@ export function useTrackSocket(token: string) {
 
     // Log all events we're listening for
     console.log(
-      "👂 Listening for events: vehicle-location, passenger-location, exception, trip-info",
+      "👂 Listening for events: vehicle-location, passenger-location, passenger-location-update, exception, trip-info",
     );
 
     const fetchTripDetails = async (tripId: string) => {

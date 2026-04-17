@@ -926,3 +926,15 @@ footer {
     transform: scale(0.85);
   }
 }
+
+/* Smooth marker transitions for tracking map */
+.tracking-marker {
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Google Maps marker container smooth transitions */
+[class*="gm-style"] .tracking-marker {
+  transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
