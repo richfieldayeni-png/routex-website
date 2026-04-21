@@ -21,14 +21,14 @@ interface TrackingMapProps {
 }
 
 const defaultCenter = { lat: 9.0579, lng: 7.4951 };
-const ANIMATION_DURATION = 1000; // ms
+// Fallback animation duration used until we have measured the real update interval
+const DEFAULT_DURATION = 1500; // ms
+const MIN_DURATION = 400;
+const MAX_DURATION = 4000;
 
-// Easing function for smooth animation
-function easeOutCubic(t: number): number {
-  return 1 - Math.pow(1 - t, 3);
-}
-
-// Hook for smooth position interpolation
+// Hook for smooth, continuous (linear) position interpolation.
+// Duration is matched to the observed update interval so the marker moves at
+// a constant speed and arrives just as the next update comes in — no stop/start.
 function useSmoothPosition(
   targetLocation: { latitude: number; longitude: number } | null,
 ): { lat: number; lng: number } | null {
@@ -36,14 +36,18 @@ function useSmoothPosition(
     lat: number;
     lng: number;
   } | null>(null);
+  const displayPosRef = useRef<{ lat: number; lng: number } | null>(null);
   const animationRef = useRef<number | null>(null);
   const startPosRef = useRef<{ lat: number; lng: number } | null>(null);
   const startTimeRef = useRef<number>(0);
+  const durationRef = useRef<number>(DEFAULT_DURATION);
+  const lastUpdateTsRef = useRef<number | null>(null);
   const isFirstPosition = useRef(true);
 
   useEffect(() => {
     if (!targetLocation) {
       setDisplayPos(null);
+      displayPosRef.current = null;
       return;
     }
 
@@ -51,43 +55,57 @@ function useSmoothPosition(
       lat: targetLocation.latitude,
       lng: targetLocation.longitude,
     };
+    const now = performance.now();
 
-    // First position - set immediately without animation
-    if (isFirstPosition.current || !displayPos) {
+    // First position — snap, no animation.
+    if (isFirstPosition.current || !displayPosRef.current) {
       isFirstPosition.current = false;
+      displayPosRef.current = target;
       setDisplayPos(target);
       startPosRef.current = target;
+      lastUpdateTsRef.current = now;
       return;
     }
 
-    // Cancel any existing animation
+    // Measure interval between updates to time the animation so motion is continuous.
+    if (lastUpdateTsRef.current != null) {
+      const observed = now - lastUpdateTsRef.current;
+      if (observed > 50) {
+        // Blend observed with previous to avoid jitter
+        durationRef.current = Math.max(
+          MIN_DURATION,
+          Math.min(MAX_DURATION, (durationRef.current + observed) / 2),
+        );
+      }
+    }
+    lastUpdateTsRef.current = now;
+
+    // Cancel any existing animation and start fresh from current displayed pos.
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
     }
-
-    // Start new animation
-    startPosRef.current = displayPos;
-    startTimeRef.current = performance.now();
+    startPosRef.current = displayPosRef.current;
+    startTimeRef.current = now;
+    const duration = durationRef.current;
 
     const animate = (currentTime: number) => {
       const elapsed = currentTime - startTimeRef.current;
-      const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
-      const easedProgress = easeOutCubic(progress);
-
+      const progress = Math.min(elapsed / duration, 1);
+      // Linear — constant speed like a vehicle on a highway.
       if (startPosRef.current) {
         const newLat =
           startPosRef.current.lat +
-          (target.lat - startPosRef.current.lat) * easedProgress;
+          (target.lat - startPosRef.current.lat) * progress;
         const newLng =
           startPosRef.current.lng +
-          (target.lng - startPosRef.current.lng) * easedProgress;
-        setDisplayPos({ lat: newLat, lng: newLng });
+          (target.lng - startPosRef.current.lng) * progress;
+        const next = { lat: newLat, lng: newLng };
+        displayPosRef.current = next;
+        setDisplayPos(next);
       }
 
       if (progress < 1) {
         animationRef.current = requestAnimationFrame(animate);
-      } else {
-        startPosRef.current = target;
       }
     };
 
@@ -113,48 +131,65 @@ function MapContent({ vehicleLocation, passengerLocation }: TrackingMapProps) {
     passengerLocation && vehicleLocation ? passengerLocation : null,
   );
 
-  console.log("🗺️ MapContent render:", {
-    vehicleLocation,
-    passengerLocation,
-    smoothPrimaryPos,
-    mapReady: !!map,
-  });
+  const hasInitialFitRef = useRef(false);
 
+  // Initial fit: run once when we first have both points (or the primary point).
+  // After that we only smoothly pan to follow the marker — no more abrupt
+  // re-zooms / re-fits on every location update.
   useEffect(() => {
     if (!map) return;
+    if (hasInitialFitRef.current) return;
+    if (!primaryVehicleLocation) return;
 
     const bounds = new window.google.maps.LatLngBounds();
-    let hasPoints = false;
-
-    if (primaryVehicleLocation) {
-      bounds.extend({
-        lat: primaryVehicleLocation.latitude,
-        lng: primaryVehicleLocation.longitude,
-      });
-      hasPoints = true;
-    }
-
+    bounds.extend({
+      lat: primaryVehicleLocation.latitude,
+      lng: primaryVehicleLocation.longitude,
+    });
     if (passengerLocation && vehicleLocation) {
       bounds.extend({
         lat: passengerLocation.latitude,
         lng: passengerLocation.longitude,
       });
-      hasPoints = true;
     }
+    map.fitBounds(bounds, { top: 80, right: 60, bottom: 260, left: 60 });
 
-    if (hasPoints) {
-      map.fitBounds(bounds, { top: 80, right: 60, bottom: 260, left: 60 });
-
-      const listener = window.google.maps.event.addListenerOnce(map, "idle", () => {
+    const listener = window.google.maps.event.addListenerOnce(
+      map,
+      "idle",
+      () => {
         const zoom = map.getZoom();
         if (zoom && zoom > 16) map.setZoom(16);
-      });
+        hasInitialFitRef.current = true;
+      },
+    );
 
-      return () => {
-        window.google.maps.event.removeListener(listener);
-      };
-    }
+    return () => {
+      window.google.maps.event.removeListener(listener);
+    };
   }, [map, primaryVehicleLocation, passengerLocation, vehicleLocation]);
+
+  // Smoothly follow the primary marker without changing zoom. panTo animates
+  // the viewport gently; we only call it when the marker is near the edge so
+  // small jitters don't move the map every frame.
+  useEffect(() => {
+    if (!map || !smoothPrimaryPos) return;
+    if (!hasInitialFitRef.current) return;
+    const bounds = map.getBounds();
+    if (!bounds) return;
+    const ne = bounds.getNorthEast();
+    const sw = bounds.getSouthWest();
+    const latSpan = ne.lat() - sw.lat();
+    const lngSpan = ne.lng() - sw.lng();
+    const center = map.getCenter();
+    if (!center) return;
+    const dLat = Math.abs(smoothPrimaryPos.lat - center.lat());
+    const dLng = Math.abs(smoothPrimaryPos.lng - center.lng());
+    // If the marker drifts past ~25% of the visible span from center, pan.
+    if (dLat > latSpan * 0.25 || dLng > lngSpan * 0.25) {
+      map.panTo(smoothPrimaryPos);
+    }
+  }, [map, smoothPrimaryPos?.lat, smoothPrimaryPos?.lng]);
 
   return (
     <Map

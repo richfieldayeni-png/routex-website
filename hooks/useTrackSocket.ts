@@ -7,7 +7,7 @@ import {
   PassengerLocation,
   SocketException,
   TrackingState,
-  TripInfo,
+  TripShareInfo,
 } from "@/types/track";
 
 const API_URL =
@@ -17,13 +17,37 @@ export function useTrackSocket(token: string) {
   const [state, setState] = useState<TrackingState>({
     vehicleLocation: null,
     passengerLocation: null,
-    tripInfo: null,
+    shareInfo: null,
     isConnected: false,
     isConnecting: true,
     error: null,
   });
 
   const [socket, setSocket] = useState<Socket | null>(null);
+
+  // Fetch trip share info (passenger + stops) by token
+  useEffect(() => {
+    let cancelled = false;
+    const fetchShareInfo = async () => {
+      try {
+        const response = await fetch(`/api/trips/share/${token}`);
+        if (!response.ok) {
+          return;
+        }
+        const result = await response.json();
+        const data: TripShareInfo | undefined = result?.data;
+        if (!cancelled && data) {
+          setState((prev) => ({ ...prev, shareInfo: data }));
+        }
+      } catch (err) {
+        // Error silently handled
+      }
+    };
+    fetchShareInfo();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   useEffect(() => {
     const socketInstance = io(API_URL, {
@@ -37,7 +61,6 @@ export function useTrackSocket(token: string) {
     setSocket(socketInstance);
 
     socketInstance.on("connect", () => {
-      console.log("✅ Socket connected");
       setState((prev) => ({
         ...prev,
         isConnected: true,
@@ -46,11 +69,9 @@ export function useTrackSocket(token: string) {
       }));
 
       socketInstance.emit("join-trip-share", { token });
-      console.log("📤 Sent join-trip-share with token:", token);
     });
 
     socketInstance.on("disconnect", () => {
-      console.log("❌ Socket disconnected");
       setState((prev) => ({
         ...prev,
         isConnected: false,
@@ -58,7 +79,6 @@ export function useTrackSocket(token: string) {
     });
 
     socketInstance.on("connect_error", (error) => {
-      console.error("❌ Socket connection error:", error);
       setState((prev) => ({
         ...prev,
         isConnecting: false,
@@ -68,7 +88,6 @@ export function useTrackSocket(token: string) {
     });
 
     socketInstance.on("vehicle-location", (data: VehicleLocation) => {
-      console.log("🚗 Vehicle location received:", data);
       setState((prev) => ({
         ...prev,
         vehicleLocation: data,
@@ -78,7 +97,6 @@ export function useTrackSocket(token: string) {
     });
 
     const handlePassengerLocation = (data: PassengerLocation) => {
-      console.log("👤 Passenger location received:", data);
       setState((prev) => ({
         ...prev,
         passengerLocation: data,
@@ -91,7 +109,6 @@ export function useTrackSocket(token: string) {
     socketInstance.on("passenger-location-update", handlePassengerLocation);
 
     socketInstance.on("exception", (data: SocketException) => {
-      console.error("⚠️ Socket exception:", data);
       setState((prev) => ({
         ...prev,
         error: data.message || "An error occurred",
@@ -99,40 +116,8 @@ export function useTrackSocket(token: string) {
     });
 
     socketInstance.onAny((eventName, ...args) => {
-      console.log("📨 Socket event:", eventName, JSON.stringify(args, null, 2));
-
-      // Check if any event contains tripId and fetch trip details
-      if (args[0] && typeof args[0] === "object") {
-        const data = Array.isArray(args[0]) ? args[0][0] : args[0];
-        if (data?.tripId) {
-          console.log("🔍 Found tripId, fetching trip details:", data.tripId);
-          fetchTripDetails(data.tripId);
-        }
-      }
+      // Silent
     });
-
-    // Log all events we're listening for
-    console.log(
-      "👂 Listening for events: vehicle-location, passenger-location, passenger-location-update, exception, trip-info",
-    );
-
-    const fetchTripDetails = async (tripId: string) => {
-      try {
-        console.log("📡 Fetching trip details for:", tripId);
-        const response = await fetch(`/api/trips/${tripId}`);
-        const result = await response.json();
-        console.log("📋 Trip API response:", result);
-
-        if (result.data) {
-          setState((prev) => ({
-            ...prev,
-            tripInfo: result.data,
-          }));
-        }
-      } catch (err) {
-        console.error("❌ Failed to fetch trip details:", err);
-      }
-    };
 
     return () => {
       if (socketInstance.connected) {

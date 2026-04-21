@@ -5,21 +5,22 @@ const API_URL =
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: { token: string } },
 ) {
   try {
-    const { id } = params;
-    const url = `${API_URL}/trips/${id}`;
+    const { token } = params;
+    const url = `${API_URL}/trips/share/${token}`;
 
     const response = await fetch(url, {
       headers: {
         "Content-Type": "application/json",
       },
+      cache: "no-store",
     });
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: "Failed to fetch trip details" },
+        { error: "Failed to fetch trip share info" },
         { status: response.status },
       );
     }

@@ -12,7 +12,7 @@ export default function TrackingPage({ token }: TrackingPageProps) {
   const {
     vehicleLocation,
     passengerLocation,
-    tripInfo,
+    shareInfo,
     isConnected,
     isConnecting,
     error,
@@ -23,21 +23,23 @@ export default function TrackingPage({ token }: TrackingPageProps) {
 
   const speed = vehicleLocation?.speed ?? passengerLocation?.speed;
   const heading = vehicleLocation?.heading ?? passengerLocation?.heading;
-  const passengerName = tripInfo?.passenger
-    ? `${tripInfo.passenger.firstName} ${tripInfo.passenger.lastName}`
-    : null;
 
-  // Trip details
-  const vehicleName = tripInfo?.vehicle?.name;
-  const vehicleType = tripInfo?.vehicle?.type;
-  const startLocationName =
-    tripInfo?.startLocation?.name || tripInfo?.route?.startLocation?.name;
-  const endLocationName =
-    tripInfo?.endLocation?.name || tripInfo?.route?.endLocation?.name;
-  const tripCode = tripInfo?.code;
-  const distanceKm = tripInfo?.route?.distanceKm;
-  const estimatedDurationMin = tripInfo?.route?.estimatedDurationMin;
-  const stops = tripInfo?.tripStopStatuses || [];
+  // Passenger info from share endpoint
+  const passengerTrip = shareInfo?.passengerTrips?.[0];
+  const passenger = passengerTrip?.passenger;
+  const passengerName = passenger
+    ? `${passenger.firstName} ${passenger.lastName}`
+    : null;
+  const passengerCode = passenger?.code;
+  const seatNo = passengerTrip?.seatNo ?? null;
+  const passengerStatus = passengerTrip?.status;
+
+  // Route details from share endpoint
+  const startLocationName = shareInfo?.boardingStop?.name;
+  const endLocationName = shareInfo?.alightingStop?.name;
+  const boardingCity = shareInfo?.boardingStop?.city;
+  const alightingCity = shareInfo?.alightingStop?.city;
+  const stops: Array<{ id: string; stop: { name: string }; role: string }> = [];
 
   return (
     <div
@@ -506,7 +508,7 @@ export default function TrackingPage({ token }: TrackingPageProps) {
                   </div>
                 </div>
                 {/* Trip meta */}
-                {(distanceKm || estimatedDurationMin || tripCode) && (
+                {(passengerCode || seatNo !== null || passengerStatus) && (
                   <div
                     style={{
                       display: "flex",
@@ -516,22 +518,21 @@ export default function TrackingPage({ token }: TrackingPageProps) {
                       borderTop: "1px solid #E8EEF2",
                     }}
                   >
-                    {tripCode && (
+                    {passengerCode && (
                       <div style={{ fontSize: 11, color: "#6A737D" }}>
                         <span style={{ fontWeight: 600, color: "#0D1117" }}>
-                          {tripCode}
+                          {passengerCode}
                         </span>
                       </div>
                     )}
-                    {distanceKm && (
+                    {seatNo !== null && seatNo !== undefined && (
                       <div style={{ fontSize: 11, color: "#6A737D" }}>
-                        {distanceKm} km
+                        Seat {seatNo}
                       </div>
                     )}
-                    {estimatedDurationMin && (
+                    {passengerStatus && (
                       <div style={{ fontSize: 11, color: "#6A737D" }}>
-                        ~{Math.round(estimatedDurationMin / 60)}h{" "}
-                        {estimatedDurationMin % 60}m
+                        {passengerStatus.toLowerCase()}
                       </div>
                     )}
                   </div>
@@ -594,45 +595,10 @@ export default function TrackingPage({ token }: TrackingPageProps) {
                       letterSpacing: 0.5,
                     }}
                   >
-                    {vehicleType || "Vehicle"}
+                    {"Vehicle"}
                   </span>
                 </div>
-                {vehicleName ? (
-                  <div>
-                    <div
-                      style={{
-                        fontSize: 14,
-                        fontWeight: 600,
-                        lineHeight: 1.3,
-                        marginBottom: 4,
-                      }}
-                    >
-                      {vehicleName}
-                    </div>
-                    {speed !== undefined && speed !== null && (
-                      <div
-                        style={{
-                          fontFamily: "var(--display)",
-                          fontSize: 18,
-                          fontWeight: 800,
-                          lineHeight: 1,
-                          marginTop: 6,
-                        }}
-                      >
-                        {Math.round(speed)}{" "}
-                        <span
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 500,
-                            opacity: 0.7,
-                          }}
-                        >
-                          km/h
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                ) : vehicleLocation ? (
+                {vehicleLocation ? (
                   <div>
                     {speed !== undefined && speed !== null && (
                       <div
