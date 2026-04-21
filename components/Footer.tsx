@@ -30,18 +30,18 @@ export default function Footer() {
           </div>
           <div className="footer-col">
             <div className="footer-col-title">Legal</div>
-            <a href="#">Privacy policy</a>
-            <a href="#">Terms of service</a>
-            <a href="#">Cookie policy</a>
+            <a href="/privacy">Privacy policy</a>
+            <a href="/terms">Terms of service</a>
+            <a href="/support">Support</a>
             <a href="#">Cancellation policy</a>
           </div>
         </div>
         <div className="footer-bottom">
           <div>© 2025 RouteX Technologies. All rights reserved.</div>
           <div className="footer-legal">
-            <a href="#">Privacy</a>
-            <a href="#">Terms</a>
-            <a href="#">Cookies</a>
+            <a href="/privacy">Privacy</a>
+            <a href="/terms">Terms</a>
+            <a href="/support">Support</a>
           </div>
         </div>
       </div>
