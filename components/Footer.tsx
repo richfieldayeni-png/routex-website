@@ -23,6 +23,7 @@ export default function Footer() {
           </div>
           <div className="footer-col">
             <div className="footer-col-title">Company</div>
+            <a href="/faq">FAQ</a>
             <a href="#about">About</a>
             <a href="#contact">Contact</a>
             <a href="#">Careers</a>
@@ -33,7 +34,7 @@ export default function Footer() {
             <a href="/privacy">Privacy policy</a>
             <a href="/terms">Terms of service</a>
             <a href="/support">Support</a>
-            <a href="#">Cancellation policy</a>
+            <a href="/policies/trip-cancellation">Cancellation policy</a>
           </div>
         </div>
         <div className="footer-bottom">
