@@ -132,6 +132,7 @@ function MapContent({ vehicleLocation, passengerLocation }: TrackingMapProps) {
   );
 
   const hasInitialFitRef = useRef(false);
+  const hasLockedToMarkerRef = useRef(false);
 
   // Initial fit: run once when we first have both points (or the primary point).
   // After that we only smoothly pan to follow the marker — no more abrupt
@@ -169,26 +170,21 @@ function MapContent({ vehicleLocation, passengerLocation }: TrackingMapProps) {
     };
   }, [map, primaryVehicleLocation, passengerLocation, vehicleLocation]);
 
-  // Smoothly follow the primary marker without changing zoom. panTo animates
-  // the viewport gently; we only call it when the marker is near the edge so
-  // small jitters don't move the map every frame.
+  // Lock the marker to the center of the canvas — on every interpolated
+  // position update, re-center the map so the marker appears stationary and
+  // the map itself slides underneath it. setCenter is instant (not animated)
+  // so it stays in lockstep with the marker, which is already smoothly
+  // interpolated by useSmoothPosition. The first transition from the
+  // fit-bounds view uses panTo for a gentle handoff.
   useEffect(() => {
     if (!map || !smoothPrimaryPos) return;
     if (!hasInitialFitRef.current) return;
-    const bounds = map.getBounds();
-    if (!bounds) return;
-    const ne = bounds.getNorthEast();
-    const sw = bounds.getSouthWest();
-    const latSpan = ne.lat() - sw.lat();
-    const lngSpan = ne.lng() - sw.lng();
-    const center = map.getCenter();
-    if (!center) return;
-    const dLat = Math.abs(smoothPrimaryPos.lat - center.lat());
-    const dLng = Math.abs(smoothPrimaryPos.lng - center.lng());
-    // If the marker drifts past ~25% of the visible span from center, pan.
-    if (dLat > latSpan * 0.25 || dLng > lngSpan * 0.25) {
+    if (!hasLockedToMarkerRef.current) {
       map.panTo(smoothPrimaryPos);
+      hasLockedToMarkerRef.current = true;
+      return;
     }
+    map.setCenter(smoothPrimaryPos);
   }, [map, smoothPrimaryPos?.lat, smoothPrimaryPos?.lng]);
 
   return (
