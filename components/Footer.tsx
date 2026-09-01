@@ -16,16 +16,16 @@ export default function Footer() {
           </div>
           <div className="footer-col">
             <div className="footer-col-title">Product</div>
-            <a href="#how-it-works">How it works</a>
-            <a href="#features">Features</a>
-            <a href="#for-business">For business</a>
+            <a href="/#how-it-works">How it works</a>
+            <a href="/#features">Features</a>
+            <a href="/#for-business">For business</a>
             <a href="#">Driver app</a>
           </div>
           <div className="footer-col">
             <div className="footer-col-title">Company</div>
             <a href="/faq">FAQ</a>
-            <a href="#about">About</a>
-            <a href="#contact">Contact</a>
+            <a href="/#about">About</a>
+            <a href="/#contact">Contact</a>
             <a href="#">Careers</a>
             <a href="#">Blog</a>
           </div>
@@ -35,6 +35,7 @@ export default function Footer() {
             <a href="/terms">Terms of service</a>
             <a href="/support">Support</a>
             <a href="/policies/trip-cancellation">Cancellation policy</a>
+            <a href="/delete-account">Delete account</a>
           </div>
         </div>
         <div className="footer-bottom">
@@ -43,6 +44,7 @@ export default function Footer() {
             <a href="/privacy">Privacy</a>
             <a href="/terms">Terms</a>
             <a href="/support">Support</a>
+            <a href="/delete-account">Account Deletion</a>
           </div>
         </div>
       </div>

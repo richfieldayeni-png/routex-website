@@ -10,13 +10,13 @@ export default function Navbar() {
         Route<span>X</span>
       </a>
       <div className="nav-links">
-        <a href="#how-it-works">How it works</a>
-        <a href="#features">Features</a>
-        <a href="#for-business">For business</a>
-        <a href="#about">About</a>
-        <a href="#contact">Contact</a>
+        <a href="/#how-it-works">How it works</a>
+        <a href="/#features">Features</a>
+        <a href="/#for-business">For business</a>
+        <a href="/#about">About</a>
+        <a href="/#contact">Contact</a>
       </div>
-      <a href="#for-business" className="nav-cta">Get started</a>
+      <a href="/#for-business" className="nav-cta">Get started</a>
     </nav>
   )
 }
