@@ -1,27 +1,27 @@
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/Hero'
-import Partners from '@/components/Partners'
+import TrustBar from '@/components/TrustBar'
+import WhyRouteX from '@/components/WhyRouteX'
+import RoutesPreview from '@/components/RoutesPreview'
+import Solutions from '@/components/Solutions'
 import HowItWorks from '@/components/HowItWorks'
-import Features from '@/components/Features'
-import ForBusiness from '@/components/ForBusiness'
-import About from '@/components/About'
-import ContactCTA from '@/components/ContactCTA'
+import PreLaunchCTA from '@/components/PreLaunchCTA'
 import Footer from '@/components/Footer'
 
 export default function Home() {
   return (
-    <>
+    <div style={{ background: '#FFFFFF', minHeight: '100vh' }}>
       <Navbar />
       <main>
         <Hero />
-        <Partners />
+        <TrustBar />
+        <WhyRouteX />
+        <RoutesPreview />
+        <Solutions />
         <HowItWorks />
-        <Features />
-        <ForBusiness />
-        <About />
-        <ContactCTA />
+        <PreLaunchCTA />
       </main>
       <Footer />
-    </>
+    </div>
   )
 }

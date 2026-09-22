@@ -1,61 +1,80 @@
+import { Smartphone, MapPin, Ticket, Bus } from 'lucide-react'
+
 export default function HowItWorks() {
+  const steps = [
+    {
+      step: '01',
+      icon: Smartphone,
+      title: 'Download App',
+      desc: 'Get RouteX on iOS or Android and set up your profile in under 2 minutes.',
+    },
+    {
+      step: '02',
+      icon: MapPin,
+      title: 'Select Route',
+      desc: 'Choose your pickup point and destination across Abuja business hubs.',
+    },
+    {
+      step: '03',
+      icon: Ticket,
+      title: 'Book Seat',
+      desc: 'Reserve your guaranteed seat for ₦500 single trips or automated weekly passes.',
+    },
+    {
+      step: '04',
+      icon: Bus,
+      title: 'Enjoy Ride',
+      desc: 'Track vehicle arrival live, board comfortably, and arrive refreshed.',
+    },
+  ]
+
   return (
-    <section id="how-it-works" style={{ padding: '96px 5%', background: 'white' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto 56px' }}>
-          <div className="section-tag">How it works</div>
-          <div className="section-title">
-            From registration to<br /><em>daily commute</em>
-          </div>
-          <p className="section-sub" style={{ marginBottom: 0 }}>
-            Four simple steps — your team gets to work, stress-free.
-          </p>
-        </div>
-        <div className="how-grid">
-          <div className="how-step">
-            <div className="step-num">01</div>
-            <div className="step-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#1A5632" strokeWidth={2} strokeLinecap="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx={12} cy={7} r={4} />
-              </svg>
+    <section id="how-it-works" className="section" style={{ background: '#F8FAF9' }}>
+      <div style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto 48px' }}>
+        <span className="section-tag">Seamless Journey</span>
+        <h2 className="section-title">
+          How <em>RouteX</em> Works
+        </h2>
+        <p style={{ fontSize: '16px', color: '#6B7280' }}>
+          Experience effortless corporate commuting across Abuja in four simple steps.
+        </p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' }}>
+        {steps.map((item, idx) => {
+          const Icon = item.icon
+          return (
+            <div
+              key={idx}
+              style={{
+                background: '#FFFFFF',
+                border: '1px solid #E2E8F0',
+                borderRadius: '16px',
+                padding: '28px 20px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div>
+                {/* Top Row: Step Number & Icon grouped together */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                  <span style={{ fontFamily: 'var(--display)', fontSize: '32px', fontWeight: 800, color: '#C9A84C' }}>
+                    {item.step}
+                  </span>
+                  <div style={{ width: '40px', height: '40px', background: '#164E2D', color: '#FFFFFF', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Icon className="icon-ui" style={{ width: '20px', height: '20px' }} />
+                  </div>
+                </div>
+
+                <h3 style={{ fontFamily: 'var(--display)', fontSize: '18px', fontWeight: 700, color: '#121517', marginBottom: '8px' }}>
+                  {item.title}
+                </h3>
+                <p style={{ fontSize: '14px', color: '#6B7280', lineHeight: 1.6 }}>{item.desc}</p>
+              </div>
             </div>
-            <div className="step-title">Company registers</div>
-            <div className="step-desc">Your HR or admin team creates a RouteX business account and adds employees.</div>
-          </div>
-          <div className="how-step">
-            <div className="step-num">02</div>
-            <div className="step-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#1A5632" strokeWidth={2} strokeLinecap="round">
-                <circle cx={11} cy={11} r={8} />
-                <path d="m21 21-4.35-4.35" />
-              </svg>
-            </div>
-            <div className="step-title">Employees discover routes</div>
-            <div className="step-desc">Staff browse available corporate routes and schedules that fit their commute.</div>
-          </div>
-          <div className="how-step">
-            <div className="step-num">03</div>
-            <div className="step-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#1A5632" strokeWidth={2} strokeLinecap="round">
-                <rect x={1} y={4} width={22} height={16} rx={2} ry={2} />
-                <line x1={1} y1={10} x2={23} y2={10} />
-              </svg>
-            </div>
-            <div className="step-title">Book and pay</div>
-            <div className="step-desc">Reserve a seat in seconds. Pay via card or bank transfer, get instant confirmation.</div>
-          </div>
-          <div className="how-step">
-            <div className="step-num">04</div>
-            <div className="step-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#1A5632" strokeWidth={2} strokeLinecap="round">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-              </svg>
-            </div>
-            <div className="step-title">Track live</div>
-            <div className="step-desc">Real-time GPS tracking keeps employees informed of bus location and arrival time.</div>
-          </div>
-        </div>
+          )
+        })}
       </div>
     </section>
   )
